@@ -1,0 +1,60 @@
+import { useEffect, useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { ChevronDown } from 'lucide-react'
+import api from '../services/api.js'
+import { skillsSection as skillsSectionFallback } from '../data/dummy.js'
+
+export default function SkillsAccordion() {
+  const [open, setOpen] = useState(0)
+  const [skillsSection, setSkillsSection] = useState(skillsSectionFallback)
+
+  useEffect(() => {
+    let active = true
+    api.get('/skills')
+      .then(({ data }) => {
+        if (!active || !data?.data) return
+        const s = data.data
+        setSkillsSection({
+          skillsIntroParagraph: s.skillsIntroParagraph || skillsSectionFallback.skillsIntroParagraph,
+          skillsCategories: s.skillsCategories?.length ? s.skillsCategories : skillsSectionFallback.skillsCategories,
+        })
+      })
+      .catch(() => { /* keep fallback */ })
+    return () => { active = false }
+  }, [])
+
+  return (
+    <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <h2 className="heading text-3xl sm:text-4xl text-center mb-4 tracking-wider">SKILLS & TECHNOLOGIES</h2>
+      <p className="text-center max-w-2xl mx-auto mb-10">{skillsSection.skillsIntroParagraph}</p>
+      <div className="space-y-3">
+        {skillsSection.skillsCategories.map((c, i) => {
+          const isOpen = open === i
+          return (
+            <div key={c.id ?? c.categoryName} className="card overflow-hidden">
+              <button onClick={() => setOpen(isOpen ? -1 : i)} className="w-full flex items-center justify-between px-5 py-4 text-left">
+                <span className="heading">{c.categoryName}</span>
+                <ChevronDown className={`text-accent transition-transform ${isOpen ? 'rotate-180' : ''}`} size={20} />
+              </button>
+              <AnimatePresence initial={false}>
+                {isOpen && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <div className="px-5 pb-5">
+                      <p className="mb-3 text-sm">{c.categoryDescription}</p>
+                      <div className="flex flex-wrap gap-2">
+                        {c.subSkills.map(s => <span key={s} className="tag">{s}</span>)}
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )
+        })}
+      </div>
+    </section>
+  )
+}
