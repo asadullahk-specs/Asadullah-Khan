@@ -65,7 +65,7 @@ export default function FooterEditor() {
       <form onSubmit={save}>
         <Card className="mb-6">
           <Field label="Summary Text"><Textarea rows={3} value={data.footerSummaryText} onChange={(e) => setData({ ...data, footerSummaryText: e.target.value })} /></Field>
-          <Field label="Footer Skills List" hint="Shown as small tags under the summary text in the footer.">
+          <Field label="Footer List" hint="Shown as small tags under the summary text in the footer.">
             <TagInput value={data.footerSkillsList} onChange={(v) => setData({ ...data, footerSkillsList: v })} />
           </Field>
         </Card>

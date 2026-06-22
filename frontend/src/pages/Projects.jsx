@@ -71,7 +71,7 @@ export default function Projects() {
         <div className="hidden lg:block bg-gray-50 dark:bg-darkSecondary rounded-lg border border-gray-200 dark:border-gray-800 p-6 h-fit sticky top-20">
           <Sidebar />
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {filtered.map((p, i) => <ProjectCard key={p.id} p={p} index={i} />)}
         </div>
       </div>
