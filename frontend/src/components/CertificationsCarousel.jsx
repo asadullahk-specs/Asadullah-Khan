@@ -50,13 +50,13 @@ export default function CertificationsCarousel() {
           </motion.div>
         </AnimatePresence>
         <div className="flex items-center justify-center gap-4 mt-6">
-          <button onClick={prev} className="p-2 rounded-full bg-accent/10 text-accent hover:bg-accent hover:text-white"><ChevronLeft size={20} /></button>
+          <button onClick={prev} aria-label="Previous certification" className="p-2.5 rounded-lg bg-accent/10 text-accent hover:bg-accent hover:text-white"><ChevronLeft size={20} /></button>
           <div className="flex gap-2">
             {certifications.map((_, idx) => (
               <button key={idx} onClick={() => setI(idx)} className={`w-2.5 h-2.5 rounded-full transition ${idx === i ? 'bg-accent w-6' : 'bg-accent/30'}`} />
             ))}
           </div>
-          <button onClick={next} className="p-2 rounded-full bg-accent/10 text-accent hover:bg-accent hover:text-white"><ChevronRight size={20} /></button>
+          <button onClick={next} aria-label="Next certification" className="p-2.5 rounded-lg bg-accent/10 text-accent hover:bg-accent hover:text-white"><ChevronRight size={20} /></button>
         </div>
       </div>
     </section>
