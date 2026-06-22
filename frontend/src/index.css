@@ -2,31 +2,79 @@
 @tailwind components;
 @tailwind utilities;
 
-html, body, #root { height: 100%; }
+html,
+body,
+#root {
+  height: 100%;
+}
+
+/* Prevent the page from ever showing a horizontal scrollbar (which was
+   causing the whole layout to visibly shift left/right as hover-triggered
+   dropdowns/accordions/cards changed page height and the vertical
+   scrollbar appeared/disappeared). Reserving the scrollbar gutter keeps
+   the content column at a fixed width at all times. */
+html {
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
+}
+
 body {
+  overflow-x: hidden;
   @apply font-sans antialiased transition-colors duration-300;
-  background-color: #FAFAFA;
+  background-color: #F9FAFB;
   color: #4B5563;
 }
-.dark body { background-color: #111827; color: #D1D5DB; }
 
-* { transition: background-color .3s ease, color .3s ease, border-color .3s ease; }
+.dark body {
+  background-color: #0B1120;
+  color: #D1D5DB;
+}
 
-.card { @apply bg-lightCard dark:bg-darkCard rounded-2xl shadow-md; }
-.heading { @apply text-gray-900 dark:text-white font-bold; }
-.btn-primary { @apply inline-flex items-center gap-2 bg-accent hover:bg-accentHover text-white px-5 py-2.5 rounded-xl font-medium transition; }
-.btn-outline { @apply inline-flex items-center gap-2 border border-accent text-accent hover:bg-accent hover:text-white px-5 py-2.5 rounded-xl font-medium transition; }
-.tag { @apply text-xs px-3 py-1 rounded-full bg-accent/10 text-accent font-medium; }
+* {
+  transition: background-color .3s ease, color .3s ease, border-color .3s ease;
+}
+
+.card {
+  @apply bg-lightCard dark:bg-darkCard rounded-lg shadow-md;
+}
+
+.heading {
+  @apply text-lightHeading dark:text-darkHeading font-bold;
+}
+
+.btn-primary {
+  @apply inline-flex items-center justify-center gap-2 bg-accent hover:bg-accentHover text-white px-5 py-2.5 rounded-lg font-medium transition;
+}
+
+.btn-outline {
+  @apply inline-flex items-center justify-center gap-2 border border-accent text-accent hover:bg-accent hover:text-white px-5 py-2.5 rounded-lg font-medium transition;
+}
+
+.tag {
+  @apply text-xs px-3 py-1 rounded-lg bg-accent/10 text-accent font-medium;
+}
 
 /* typewriter cursor */
 .cursor::after {
   content: '|';
   margin-left: 2px;
   animation: blink 1s steps(1) infinite;
-  color: #8B5CF6;
+  color: #10B981;
 }
-@keyframes blink { 50% { opacity: 0; } }
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
 
 /* scrollbar */
-::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-thumb { background: #8B5CF6; border-radius: 8px; }
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #10B981;
+  border-radius: 7px;
+}
