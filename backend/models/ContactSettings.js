@@ -1,49 +1,56 @@
-const { pool } = require('../config/db');
+const mongoose = require('mongoose');
 
-function serialize(row) {
-  if (!row) return null;
+const contactSettingsSchema = new mongoose.Schema(
+  {
+    singletonKey:     { type: String, default: 'contact', unique: true },
+    contactSubtitle:  String,
+    availabilityText: String,
+    adminEmail:       String,
+    adminPhone:       String,
+    adminLocation:    String,
+    linkedinUrl:      String,
+    githubUrl:        String,
+  },
+  { timestamps: true }
+);
+
+const ContactSettingsModel = mongoose.model('ContactSettings', contactSettingsSchema);
+
+function serialize(doc) {
+  if (!doc) return null;
   return {
-    contactSubtitle: row.contact_subtitle,
-    availabilityText: row.availability_text,
-    adminEmail: row.admin_email,
-    adminPhone: row.admin_phone,
-    adminLocation: row.admin_location,
-    linkedinUrl: row.linkedin_url,
-    githubUrl: row.github_url,
-    updatedAt: row.updated_at,
+    contactSubtitle:  doc.contactSubtitle,
+    availabilityText: doc.availabilityText,
+    adminEmail:       doc.adminEmail,
+    adminPhone:       doc.adminPhone,
+    adminLocation:    doc.adminLocation,
+    linkedinUrl:      doc.linkedinUrl,
+    githubUrl:        doc.githubUrl,
+    updatedAt:        doc.updatedAt,
   };
 }
 
 const ContactSettings = {
   async get() {
-    const [rows] = await pool.query('SELECT * FROM contact_settings WHERE id = 1 LIMIT 1');
-    return serialize(rows[0]);
+    const doc = await ContactSettingsModel.findOne({ singletonKey: 'contact' }).lean();
+    return serialize(doc);
   },
 
   async update(data) {
-    const [existing] = await pool.query('SELECT id FROM contact_settings WHERE id = 1 LIMIT 1');
-    const params = [
-      data.contactSubtitle,
-      data.availabilityText,
-      data.adminEmail,
-      data.adminPhone,
-      data.adminLocation,
-      data.linkedinUrl,
-      data.githubUrl,
-    ];
-
-    if (existing.length) {
-      await pool.query(
-        'UPDATE contact_settings SET contact_subtitle = ?, availability_text = ?, admin_email = ?, admin_phone = ?, admin_location = ?, linkedin_url = ?, github_url = ? WHERE id = 1',
-        params
-      );
-    } else {
-      await pool.query(
-        'INSERT INTO contact_settings (id, contact_subtitle, availability_text, admin_email, admin_phone, admin_location, linkedin_url, github_url) VALUES (1, ?, ?, ?, ?, ?, ?, ?)',
-        params
-      );
-    }
-    return this.get();
+    const doc = await ContactSettingsModel.findOneAndUpdate(
+      { singletonKey: 'contact' },
+      {
+        contactSubtitle:  data.contactSubtitle,
+        availabilityText: data.availabilityText,
+        adminEmail:       data.adminEmail,
+        adminPhone:       data.adminPhone,
+        adminLocation:    data.adminLocation,
+        linkedinUrl:      data.linkedinUrl,
+        githubUrl:        data.githubUrl,
+      },
+      { upsert: true, new: true }
+    ).lean();
+    return serialize(doc);
   },
 };
 

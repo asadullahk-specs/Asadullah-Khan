@@ -4,21 +4,21 @@ const cors = require('cors');
 const morgan = require('morgan');
 const path = require('path');
 
-const { testConnection } = require('./config/db');
+const { connectDB } = require('./config/db');
 const { notFound, errorHandler } = require('./middleware/errorMiddleware');
 const { ensureAdminSeed } = require('./seed');
 
-const authRoutes = require('./routes/authRoutes');
-const heroRoutes = require('./routes/heroRoutes');
-const uploadRoutes = require('./routes/uploadRoutes');
-const aboutRoutes = require('./routes/aboutRoutes');
-const skillsRoutes = require('./routes/skillsRoutes');
+const authRoutes          = require('./routes/authRoutes');
+const heroRoutes          = require('./routes/heroRoutes');
+const uploadRoutes        = require('./routes/uploadRoutes');
+const aboutRoutes         = require('./routes/aboutRoutes');
+const skillsRoutes        = require('./routes/skillsRoutes');
 const certificationsRoutes = require('./routes/certificationsRoutes');
-const projectsRoutes = require('./routes/projectsRoutes');
-const contactRoutes = require('./routes/contactRoutes');
-const footerRoutes = require('./routes/footerRoutes');
-const messagesRoutes = require('./routes/messagesRoutes');
-const settingsRoutes = require('./routes/settingsRoutes');
+const projectsRoutes      = require('./routes/projectsRoutes');
+const contactRoutes       = require('./routes/contactRoutes');
+const footerRoutes        = require('./routes/footerRoutes');
+const messagesRoutes      = require('./routes/messagesRoutes');
+const settingsRoutes      = require('./routes/settingsRoutes');
 
 const app = express();
 
@@ -37,24 +37,24 @@ app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true }));
 if (process.env.NODE_ENV !== 'production') app.use(morgan('dev'));
 
-// Serve uploaded files (images, PDFs, docs) statically.
+// Serve uploaded files statically
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // ── Health check ─────────────────────────────────────────────────
 app.get('/api/health', (req, res) => res.json({ success: true, message: 'API is running' }));
 
 // ── API routes ────────────────────────────────────────────────────
-app.use('/api/auth', authRoutes);
-app.use('/api/hero', heroRoutes);
-app.use('/api/uploads', uploadRoutes);
-app.use('/api/about', aboutRoutes);
-app.use('/api/skills', skillsRoutes);
-app.use('/api/certifications', certificationsRoutes);
-app.use('/api/projects', projectsRoutes);
-app.use('/api/contact-settings', contactRoutes);
-app.use('/api/footer', footerRoutes);
-app.use('/api/messages', messagesRoutes);
-app.use('/api/settings', settingsRoutes);
+app.use('/api/auth',              authRoutes);
+app.use('/api/hero',              heroRoutes);
+app.use('/api/uploads',           uploadRoutes);
+app.use('/api/about',             aboutRoutes);
+app.use('/api/skills',            skillsRoutes);
+app.use('/api/certifications',    certificationsRoutes);
+app.use('/api/projects',          projectsRoutes);
+app.use('/api/contact-settings',  contactRoutes);
+app.use('/api/footer',            footerRoutes);
+app.use('/api/messages',          messagesRoutes);
+app.use('/api/settings',          settingsRoutes);
 
 // ── 404 + error handling (must be last) ────────────────────────────
 app.use(notFound);
@@ -62,14 +62,27 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
-async function start() {
-  await testConnection();
-  await ensureAdminSeed(); // creates the default admin from .env if admins table is empty
-  app.listen(PORT, () => {
-    console.log(`🚀 Portfolio API running on http://localhost:${PORT}`);
+if (require.main === module) {
+  // Local dev: connect DB then start listener
+  async function start() {
+    await connectDB();
+    await ensureAdminSeed();
+    app.listen(PORT, () => {
+      console.log(`🚀 Portfolio API running on http://localhost:${PORT}`);
+    });
+  }
+  start();
+} else {
+  // Serverless (Vercel): connect lazily on first request
+  let dbReady = false;
+  app.use(async (req, res, next) => {
+    if (!dbReady) {
+      await connectDB();
+      await ensureAdminSeed();
+      dbReady = true;
+    }
+    next();
   });
 }
-
-start();
 
 module.exports = app;

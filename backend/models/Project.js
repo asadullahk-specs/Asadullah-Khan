@@ -1,89 +1,89 @@
-const { pool } = require('../config/db');
-const { parseJSON, toJSON } = require('../utils/json');
+const mongoose = require('mongoose');
 
-function serialize(row) {
-  if (!row) return null;
+const projectSchema = new mongoose.Schema(
+  {
+    title:           { type: String, required: true },
+    description:     String,
+    technologies:    { type: [String], default: [] },
+    projectImage:    String,
+    detailsLink:     String,
+    isRecent:        { type: Boolean, default: false },
+    projectCategory: String,
+    sortOrder:       { type: Number, default: 0 },
+    deletedAt:       { type: Date, default: null },
+  },
+  { timestamps: true }
+);
+
+projectSchema.index({ projectCategory: 1 });
+projectSchema.index({ isRecent: 1 });
+
+const ProjectModel = mongoose.model('Project', projectSchema);
+
+function serialize(doc) {
+  if (!doc) return null;
   return {
-    id: row.id,
-    title: row.title,
-    description: row.description,
-    technologies: parseJSON(row.technologies, []),
-    projectImage: row.project_image,
-    detailsLink: row.details_link,
-    isRecent: !!row.is_recent,
-    projectCategory: row.project_category,
-    sortOrder: row.sort_order,
+    id:              doc._id.toString(),
+    title:           doc.title,
+    description:     doc.description,
+    technologies:    doc.technologies || [],
+    projectImage:    doc.projectImage,
+    detailsLink:     doc.detailsLink,
+    isRecent:        !!doc.isRecent,
+    projectCategory: doc.projectCategory,
+    sortOrder:       doc.sortOrder,
   };
 }
 
 const Project = {
   async findAll({ category, recentOnly } = {}) {
-    let sql = 'SELECT * FROM projects WHERE deleted_at IS NULL';
-    const params = [];
+    const filter = { deletedAt: null };
     if (category && category !== 'All Projects' && category !== 'All') {
-      sql += ' AND project_category = ?';
-      params.push(category);
+      filter.projectCategory = category;
     }
-    if (recentOnly) {
-      sql += ' AND is_recent = 1';
-    }
-    sql += ' ORDER BY sort_order ASC, id ASC';
-    const [rows] = await pool.query(sql, params);
-    return rows.map(serialize);
+    if (recentOnly) filter.isRecent = true;
+    const docs = await ProjectModel.find(filter).sort({ sortOrder: 1, _id: 1 }).lean();
+    return docs.map(serialize);
   },
 
   async findById(id) {
-    const [rows] = await pool.query('SELECT * FROM projects WHERE id = ? AND deleted_at IS NULL LIMIT 1', [id]);
-    return serialize(rows[0]);
+    const doc = await ProjectModel.findOne({ _id: id, deletedAt: null }).lean();
+    return serialize(doc);
   },
 
-  // Category name -> project count, used by the Projects page sidebar.
   async categoryCounts() {
-    const [rows] = await pool.query(
-      "SELECT project_category AS name, COUNT(*) AS count FROM projects WHERE deleted_at IS NULL AND project_category IS NOT NULL AND project_category <> '' GROUP BY project_category ORDER BY project_category ASC"
-    );
-    return rows;
+    const result = await ProjectModel.aggregate([
+      { $match: { deletedAt: null, projectCategory: { $nin: [null, ''] } } },
+      { $group: { _id: '$projectCategory', count: { $sum: 1 } } },
+      { $sort: { _id: 1 } },
+    ]);
+    return result.map((r) => ({ name: r._id, count: r.count }));
   },
 
   async create({ title, description, technologies, projectImage, detailsLink, isRecent, projectCategory }) {
-    const [maxRow] = await pool.query(
-      'SELECT COALESCE(MAX(sort_order), -1) + 1 AS nextOrder FROM projects WHERE deleted_at IS NULL'
-    );
-    const [result] = await pool.query(
-      'INSERT INTO projects (title, description, technologies, project_image, details_link, is_recent, project_category, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-      [
-        title,
-        description,
-        toJSON(technologies || []),
-        projectImage,
-        detailsLink,
-        isRecent ? 1 : 0,
-        projectCategory,
-        maxRow[0].nextOrder,
-      ]
-    );
-    return this.findById(result.insertId);
+    const count = await ProjectModel.countDocuments({ deletedAt: null });
+    const doc = await ProjectModel.create({
+      title, description,
+      technologies: technologies || [],
+      projectImage, detailsLink,
+      isRecent: !!isRecent,
+      projectCategory,
+      sortOrder: count,
+    });
+    return serialize(doc.toObject());
   },
 
   async update(id, { title, description, technologies, projectImage, detailsLink, isRecent, projectCategory }) {
-    await pool.query(
-      'UPDATE projects SET title = ?, description = ?, technologies = ?, project_image = ?, details_link = ?, is_recent = ?, project_category = ? WHERE id = ? AND deleted_at IS NULL',
-      [
-        title,
-        description,
-        toJSON(technologies || []),
-        projectImage,
-        detailsLink,
-        isRecent ? 1 : 0,
-        projectCategory,
-        id,
-      ]
-    );
-    return this.findById(id);
+    const doc = await ProjectModel.findOneAndUpdate(
+      { _id: id, deletedAt: null },
+      { title, description, technologies: technologies || [], projectImage, detailsLink, isRecent: !!isRecent, projectCategory },
+      { new: true }
+    ).lean();
+    return serialize(doc);
   },
 
   async softDelete(id) {
-    await pool.query('UPDATE projects SET deleted_at = NOW() WHERE id = ?', [id]);
+    await ProjectModel.findByIdAndUpdate(id, { deletedAt: new Date() });
   },
 };
 

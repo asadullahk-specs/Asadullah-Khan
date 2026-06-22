@@ -1,36 +1,40 @@
-const { pool } = require('../config/db');
+const mongoose = require('mongoose');
+
+const adminSchema = new mongoose.Schema(
+  {
+    name:     { type: String, required: true, trim: true },
+    email:    { type: String, required: true, unique: true, lowercase: true, trim: true },
+    password: { type: String, required: true }, // bcrypt hash
+  },
+  { timestamps: true }
+);
+
+const AdminModel = mongoose.model('Admin', adminSchema);
 
 const Admin = {
   async findByEmail(email) {
-    const [rows] = await pool.query('SELECT * FROM admins WHERE email = ? LIMIT 1', [email]);
-    return rows[0] || null;
+    return AdminModel.findOne({ email: email.toLowerCase().trim() }).lean();
   },
 
   async findById(id) {
-    const [rows] = await pool.query('SELECT id, name, email, created_at FROM admins WHERE id = ? LIMIT 1', [id]);
-    return rows[0] || null;
+    return AdminModel.findById(id).select('-password').lean();
   },
 
   async count() {
-    const [rows] = await pool.query('SELECT COUNT(*) AS c FROM admins');
-    return rows[0].c;
+    return AdminModel.countDocuments();
   },
 
   async create({ name, email, passwordHash }) {
-    const [result] = await pool.query(
-      'INSERT INTO admins (name, email, password) VALUES (?, ?, ?)',
-      [name, email, passwordHash]
-    );
-    return this.findById(result.insertId);
+    const doc = await AdminModel.create({ name, email, password: passwordHash });
+    return AdminModel.findById(doc._id).select('-password').lean();
   },
 
   async updatePassword(id, passwordHash) {
-    await pool.query('UPDATE admins SET password = ? WHERE id = ?', [passwordHash, id]);
+    await AdminModel.findByIdAndUpdate(id, { password: passwordHash });
   },
 
   async updateProfile(id, { name, email }) {
-    await pool.query('UPDATE admins SET name = ?, email = ? WHERE id = ?', [name, email, id]);
-    return this.findById(id);
+    return AdminModel.findByIdAndUpdate(id, { name, email }, { new: true }).select('-password').lean();
   },
 };
 

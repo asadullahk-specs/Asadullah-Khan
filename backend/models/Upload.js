@@ -1,42 +1,50 @@
-const { pool } = require('../config/db');
+const mongoose = require('mongoose');
 
-function serialize(row) {
-  if (!row) return null;
+const uploadSchema = new mongoose.Schema(
+  {
+    originalName: { type: String, required: true },
+    fileName:     { type: String, required: true },
+    filePath:     { type: String, required: true },
+    fileUrl:      { type: String, required: true },
+    mimeType:     String,
+    fileType:     { type: String, enum: ['image', 'pdf', 'doc', 'other'], default: 'other' },
+    sizeBytes:    Number,
+    deletedAt:    { type: Date, default: null },
+  },
+  { timestamps: true }
+);
+
+const UploadModel = mongoose.model('Upload', uploadSchema);
+
+function serialize(doc) {
+  if (!doc) return null;
   return {
-    id: row.id,
-    name: row.original_name,
-    fileName: row.file_name,
-    url: row.file_url,
-    type: row.file_type,
-    mimeType: row.mime_type,
-    size: row.size_bytes,
-    createdAt: row.created_at,
+    id:        doc._id.toString(),
+    name:      doc.originalName,
+    fileName:  doc.fileName,
+    url:       doc.fileUrl,
+    type:      doc.fileType,
+    mimeType:  doc.mimeType,
+    size:      doc.sizeBytes,
+    createdAt: doc.createdAt,
   };
 }
 
 const Upload = {
   async findAll() {
-    const [rows] = await pool.query(
-      'SELECT * FROM uploads WHERE deleted_at IS NULL ORDER BY created_at DESC, id DESC'
-    );
-    return rows.map(serialize);
+    const docs = await UploadModel.find({ deletedAt: null }).sort({ createdAt: -1 }).lean();
+    return docs.map(serialize);
   },
-
   async findById(id) {
-    const [rows] = await pool.query('SELECT * FROM uploads WHERE id = ? AND deleted_at IS NULL LIMIT 1', [id]);
-    return serialize(rows[0]);
+    const doc = await UploadModel.findOne({ _id: id, deletedAt: null }).lean();
+    return serialize(doc);
   },
-
   async create({ originalName, fileName, filePath, fileUrl, mimeType, fileType, sizeBytes }) {
-    const [result] = await pool.query(
-      'INSERT INTO uploads (original_name, file_name, file_path, file_url, mime_type, file_type, size_bytes) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [originalName, fileName, filePath, fileUrl, mimeType, fileType, sizeBytes]
-    );
-    return this.findById(result.insertId);
+    const doc = await UploadModel.create({ originalName, fileName, filePath, fileUrl, mimeType, fileType, sizeBytes });
+    return serialize(doc.toObject());
   },
-
   async softDelete(id) {
-    await pool.query('UPDATE uploads SET deleted_at = NOW() WHERE id = ?', [id]);
+    await UploadModel.findByIdAndUpdate(id, { deletedAt: new Date() });
   },
 };
 

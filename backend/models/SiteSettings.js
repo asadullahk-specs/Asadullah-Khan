@@ -1,49 +1,55 @@
-const { pool } = require('../config/db');
+const mongoose = require('mongoose');
 
-function serialize(row) {
-  if (!row) return null;
+const siteSettingsSchema = new mongoose.Schema(
+  {
+    singletonKey:          { type: String, default: 'site', unique: true },
+    siteName:              String,
+    siteTagline:           String,
+    seoDescription:        String,
+    favicon:               String,
+    adminEmail:            String,
+    projectsPageIntroText: String,
+  },
+  { timestamps: true }
+);
+
+const SiteSettingsModel = mongoose.model('SiteSettings', siteSettingsSchema);
+
+function serialize(doc) {
+  if (!doc) return null;
   return {
-    siteName: row.site_name,
-    siteTagline: row.site_tagline,
-    seoDescription: row.seo_description,
-    favicon: row.favicon,
-    adminEmail: row.admin_email,
-    projectsPageIntroText: row.projects_page_intro_text,
-    updatedAt: row.updated_at,
+    siteName:              doc.siteName,
+    siteTagline:           doc.siteTagline,
+    seoDescription:        doc.seoDescription,
+    favicon:               doc.favicon,
+    adminEmail:            doc.adminEmail,
+    projectsPageIntroText: doc.projectsPageIntroText,
+    updatedAt:             doc.updatedAt,
   };
 }
 
 const SiteSettings = {
   async get() {
-    const [rows] = await pool.query('SELECT * FROM site_settings WHERE id = 1 LIMIT 1');
-    return serialize(rows[0]);
+    const doc = await SiteSettingsModel.findOne({ singletonKey: 'site' }).lean();
+    return serialize(doc);
   },
 
   async update(data) {
-    const current = await this.get();
-    const merged = { ...current, ...data };
-    const [existing] = await pool.query('SELECT id FROM site_settings WHERE id = 1 LIMIT 1');
-    const params = [
-      merged.siteName,
-      merged.siteTagline,
-      merged.seoDescription,
-      merged.favicon,
-      merged.adminEmail,
-      merged.projectsPageIntroText,
-    ];
-
-    if (existing.length) {
-      await pool.query(
-        'UPDATE site_settings SET site_name = ?, site_tagline = ?, seo_description = ?, favicon = ?, admin_email = ?, projects_page_intro_text = ? WHERE id = 1',
-        params
-      );
-    } else {
-      await pool.query(
-        'INSERT INTO site_settings (id, site_name, site_tagline, seo_description, favicon, admin_email, projects_page_intro_text) VALUES (1, ?, ?, ?, ?, ?, ?)',
-        params
-      );
-    }
-    return this.get();
+    const current = (await SiteSettingsModel.findOne({ singletonKey: 'site' }).lean()) || {};
+    const merged = { ...serialize(current), ...data };
+    const doc = await SiteSettingsModel.findOneAndUpdate(
+      { singletonKey: 'site' },
+      {
+        siteName:              merged.siteName,
+        siteTagline:           merged.siteTagline,
+        seoDescription:        merged.seoDescription,
+        favicon:               merged.favicon,
+        adminEmail:            merged.adminEmail,
+        projectsPageIntroText: merged.projectsPageIntroText,
+      },
+      { upsert: true, new: true }
+    ).lean();
+    return serialize(doc);
   },
 };
 

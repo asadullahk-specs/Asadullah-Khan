@@ -1,33 +1,24 @@
-const mysql = require('mysql2/promise');
-require('dotenv').config();
+const mongoose = require('mongoose');
 
-// Centralized MySQL connection pool. Every model imports `pool` from here
-// instead of opening its own connection.
-const pool = mysql.createPool({
-  host: process.env.DB_HOST || 'localhost',
-  port: Number(process.env.DB_PORT) || 3306,
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'portfolio_db',
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0,
-  dateStrings: true,
-});
+let isConnected = false;
 
-// Quick helper to confirm the DB is reachable when the server boots.
-async function testConnection() {
+async function connectDB() {
+  if (isConnected) return;
+
+  const uri = process.env.MONGODB_URI;
+  if (!uri) {
+    console.error('❌ MONGODB_URI is not set in environment variables.');
+    return;
+  }
+
   try {
-    const conn = await pool.getConnection();
-    await conn.ping();
-    conn.release();
-    console.log('✅ MySQL connected:', process.env.DB_NAME || 'portfolio_db');
+    await mongoose.connect(uri);
+    isConnected = true;
+    console.log('✅ MongoDB connected:', mongoose.connection.name);
   } catch (err) {
-    console.error('❌ MySQL connection failed:', err.message);
-    console.error(
-      '   Check backend/.env (DB_HOST, DB_USER, DB_PASSWORD, DB_NAME) and make sure MySQL is running.'
-    );
+    console.error('❌ MongoDB connection failed:', err.message);
+    throw err;
   }
 }
 
-module.exports = { pool, testConnection };
+module.exports = { connectDB };

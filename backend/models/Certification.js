@@ -1,55 +1,65 @@
-const { pool } = require('../config/db');
+const mongoose = require('mongoose');
 
-function serialize(row) {
-  if (!row) return null;
+const certificationSchema = new mongoose.Schema(
+  {
+    title:            { type: String, required: true },
+    issuer:           String,
+    duration:         String,
+    certificateImage: String,
+    pdfDocument:      String,
+    sortOrder:        { type: Number, default: 0 },
+    deletedAt:        { type: Date, default: null },
+  },
+  { timestamps: true }
+);
+
+const CertificationModel = mongoose.model('Certification', certificationSchema);
+
+function serialize(doc) {
+  if (!doc) return null;
   return {
-    id: row.id,
-    title: row.title,
-    issuer: row.issuer,
-    duration: row.duration,
-    certificateImage: row.certificate_image,
-    pdfDocument: row.pdf_document,
-    sortOrder: row.sort_order,
+    id:               doc._id.toString(),
+    title:            doc.title,
+    issuer:           doc.issuer,
+    duration:         doc.duration,
+    certificateImage: doc.certificateImage,
+    pdfDocument:      doc.pdfDocument,
+    sortOrder:        doc.sortOrder,
   };
 }
 
 const Certification = {
   async findAll() {
-    const [rows] = await pool.query(
-      'SELECT * FROM certifications WHERE deleted_at IS NULL ORDER BY sort_order ASC, id ASC'
-    );
-    return rows.map(serialize);
+    const docs = await CertificationModel.find({ deletedAt: null })
+      .sort({ sortOrder: 1, _id: 1 })
+      .lean();
+    return docs.map(serialize);
   },
 
   async findById(id) {
-    const [rows] = await pool.query(
-      'SELECT * FROM certifications WHERE id = ? AND deleted_at IS NULL LIMIT 1',
-      [id]
-    );
-    return serialize(rows[0]);
+    const doc = await CertificationModel.findOne({ _id: id, deletedAt: null }).lean();
+    return serialize(doc);
   },
 
   async create({ title, issuer, duration, certificateImage, pdfDocument }) {
-    const [maxRow] = await pool.query(
-      'SELECT COALESCE(MAX(sort_order), -1) + 1 AS nextOrder FROM certifications WHERE deleted_at IS NULL'
-    );
-    const [result] = await pool.query(
-      'INSERT INTO certifications (title, issuer, duration, certificate_image, pdf_document, sort_order) VALUES (?, ?, ?, ?, ?, ?)',
-      [title, issuer, duration, certificateImage, pdfDocument, maxRow[0].nextOrder]
-    );
-    return this.findById(result.insertId);
+    const count = await CertificationModel.countDocuments({ deletedAt: null });
+    const doc = await CertificationModel.create({
+      title, issuer, duration, certificateImage, pdfDocument, sortOrder: count,
+    });
+    return serialize(doc.toObject());
   },
 
   async update(id, { title, issuer, duration, certificateImage, pdfDocument }) {
-    await pool.query(
-      'UPDATE certifications SET title = ?, issuer = ?, duration = ?, certificate_image = ?, pdf_document = ? WHERE id = ? AND deleted_at IS NULL',
-      [title, issuer, duration, certificateImage, pdfDocument, id]
-    );
-    return this.findById(id);
+    const doc = await CertificationModel.findOneAndUpdate(
+      { _id: id, deletedAt: null },
+      { title, issuer, duration, certificateImage, pdfDocument },
+      { new: true }
+    ).lean();
+    return serialize(doc);
   },
 
   async softDelete(id) {
-    await pool.query('UPDATE certifications SET deleted_at = NOW() WHERE id = ?', [id]);
+    await CertificationModel.findByIdAndUpdate(id, { deletedAt: new Date() });
   },
 };
 

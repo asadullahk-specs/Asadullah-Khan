@@ -1,54 +1,62 @@
-const { pool } = require('../config/db');
+const mongoose = require('mongoose');
 
-function serialize(row) {
-  if (!row) return null;
+const messageSchema = new mongoose.Schema(
+  {
+    firstName: { type: String, required: true },
+    lastName:  { type: String, required: true },
+    email:     { type: String, required: true },
+    phone:     String,
+    message:   { type: String, required: true },
+    isRead:    { type: Boolean, default: false },
+    deletedAt: { type: Date, default: null },
+  },
+  { timestamps: true }
+);
+
+messageSchema.index({ isRead: 1 });
+
+const MessageModel = mongoose.model('Message', messageSchema);
+
+function serialize(doc) {
+  if (!doc) return null;
   return {
-    id: row.id,
-    firstName: row.first_name,
-    lastName: row.last_name,
-    email: row.email,
-    phone: row.phone,
-    message: row.message,
-    isRead: !!row.is_read,
-    createdAt: row.created_at,
+    id:        doc._id.toString(),
+    firstName: doc.firstName,
+    lastName:  doc.lastName,
+    email:     doc.email,
+    phone:     doc.phone,
+    message:   doc.message,
+    isRead:    !!doc.isRead,
+    createdAt: doc.createdAt,
   };
 }
 
 const Message = {
   async findAll() {
-    const [rows] = await pool.query(
-      'SELECT * FROM messages WHERE deleted_at IS NULL ORDER BY created_at DESC, id DESC'
-    );
-    return rows.map(serialize);
+    const docs = await MessageModel.find({ deletedAt: null }).sort({ createdAt: -1 }).lean();
+    return docs.map(serialize);
   },
-
   async findById(id) {
-    const [rows] = await pool.query('SELECT * FROM messages WHERE id = ? AND deleted_at IS NULL LIMIT 1', [id]);
-    return serialize(rows[0]);
+    const doc = await MessageModel.findOne({ _id: id, deletedAt: null }).lean();
+    return serialize(doc);
   },
-
   async create({ firstName, lastName, email, phone, message }) {
-    const [result] = await pool.query(
-      'INSERT INTO messages (first_name, last_name, email, phone, message) VALUES (?, ?, ?, ?, ?)',
-      [firstName, lastName, email, phone || null, message]
-    );
-    return this.findById(result.insertId);
+    const doc = await MessageModel.create({ firstName, lastName, email, phone: phone || null, message });
+    return serialize(doc.toObject());
   },
-
   async setRead(id, isRead) {
-    await pool.query('UPDATE messages SET is_read = ? WHERE id = ? AND deleted_at IS NULL', [isRead ? 1 : 0, id]);
-    return this.findById(id);
+    const doc = await MessageModel.findOneAndUpdate(
+      { _id: id, deletedAt: null },
+      { isRead },
+      { new: true }
+    ).lean();
+    return serialize(doc);
   },
-
   async softDelete(id) {
-    await pool.query('UPDATE messages SET deleted_at = NOW() WHERE id = ?', [id]);
+    await MessageModel.findByIdAndUpdate(id, { deletedAt: new Date() });
   },
-
   async unreadCount() {
-    const [rows] = await pool.query(
-      'SELECT COUNT(*) AS c FROM messages WHERE deleted_at IS NULL AND is_read = 0'
-    );
-    return rows[0].c;
+    return MessageModel.countDocuments({ deletedAt: null, isRead: false });
   },
 };
 
