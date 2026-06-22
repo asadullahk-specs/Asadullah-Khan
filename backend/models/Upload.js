@@ -36,6 +36,7 @@ const Upload = {
     return docs.map(serialize);
   },
   async findById(id) {
+    if (!mongoose.Types.ObjectId.isValid(id)) return null;
     const doc = await UploadModel.findOne({ _id: id, deletedAt: null }).lean();
     return serialize(doc);
   },

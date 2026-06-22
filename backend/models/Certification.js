@@ -37,6 +37,7 @@ const Certification = {
   },
 
   async findById(id) {
+    if (!mongoose.Types.ObjectId.isValid(id)) return null;
     const doc = await CertificationModel.findOne({ _id: id, deletedAt: null }).lean();
     return serialize(doc);
   },

@@ -47,6 +47,7 @@ const Project = {
   },
 
   async findById(id) {
+    if (!mongoose.Types.ObjectId.isValid(id)) return null;
     const doc = await ProjectModel.findOne({ _id: id, deletedAt: null }).lean();
     return serialize(doc);
   },

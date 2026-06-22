@@ -8,17 +8,17 @@ const { connectDB } = require('./config/db');
 const { notFound, errorHandler } = require('./middleware/errorMiddleware');
 const { ensureAdminSeed } = require('./seed');
 
-const authRoutes          = require('./routes/authRoutes');
-const heroRoutes          = require('./routes/heroRoutes');
-const uploadRoutes        = require('./routes/uploadRoutes');
-const aboutRoutes         = require('./routes/aboutRoutes');
-const skillsRoutes        = require('./routes/skillsRoutes');
+const authRoutes = require('./routes/authRoutes');
+const heroRoutes = require('./routes/heroRoutes');
+const uploadRoutes = require('./routes/uploadRoutes');
+const aboutRoutes = require('./routes/aboutRoutes');
+const skillsRoutes = require('./routes/skillsRoutes');
 const certificationsRoutes = require('./routes/certificationsRoutes');
-const projectsRoutes      = require('./routes/projectsRoutes');
-const contactRoutes       = require('./routes/contactRoutes');
-const footerRoutes        = require('./routes/footerRoutes');
-const messagesRoutes      = require('./routes/messagesRoutes');
-const settingsRoutes      = require('./routes/settingsRoutes');
+const projectsRoutes = require('./routes/projectsRoutes');
+const contactRoutes = require('./routes/contactRoutes');
+const footerRoutes = require('./routes/footerRoutes');
+const messagesRoutes = require('./routes/messagesRoutes');
+const settingsRoutes = require('./routes/settingsRoutes');
 
 const app = express();
 
@@ -61,17 +61,17 @@ if (require.main !== module) {
 app.get('/api/health', (req, res) => res.json({ success: true, message: 'API is running' }));
 
 // ── API routes ────────────────────────────────────────────────────
-app.use('/api/auth',              authRoutes);
-app.use('/api/hero',              heroRoutes);
-app.use('/api/uploads',           uploadRoutes);
-app.use('/api/about',             aboutRoutes);
-app.use('/api/skills',            skillsRoutes);
-app.use('/api/certifications',    certificationsRoutes);
-app.use('/api/projects',          projectsRoutes);
-app.use('/api/contact-settings',  contactRoutes);
-app.use('/api/footer',            footerRoutes);
-app.use('/api/messages',          messagesRoutes);
-app.use('/api/settings',          settingsRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/hero', heroRoutes);
+app.use('/api/uploads', uploadRoutes);
+app.use('/api/about', aboutRoutes);
+app.use('/api/skills', skillsRoutes);
+app.use('/api/certifications', certificationsRoutes);
+app.use('/api/projects', projectsRoutes);
+app.use('/api/contact-settings', contactRoutes);
+app.use('/api/footer', footerRoutes);
+app.use('/api/messages', messagesRoutes);
+app.use('/api/settings', settingsRoutes);
 
 // ── 404 + error handling (must be last) ────────────────────────────
 app.use(notFound);
@@ -85,7 +85,7 @@ if (require.main === module) {
     await connectDB();
     await ensureAdminSeed();
     app.listen(PORT, () => {
-      console.log(`🚀 Portfolio API running on http://localhost:${PORT}`);
+      console.log(`✅ Portfolio API running on http://localhost:${PORT}`);
     });
   }
   start();

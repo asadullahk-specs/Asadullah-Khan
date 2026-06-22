@@ -37,6 +37,7 @@ const Message = {
     return docs.map(serialize);
   },
   async findById(id) {
+    if (!mongoose.Types.ObjectId.isValid(id)) return null;
     const doc = await MessageModel.findOne({ _id: id, deletedAt: null }).lean();
     return serialize(doc);
   },
