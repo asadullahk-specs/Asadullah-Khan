@@ -36,7 +36,7 @@ export default function Login() {
             <Lock size={26} />
           </div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Admin Login</h1>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Sign in to manage your portfolio</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Sign in to System</p>
         </div>
 
         {error && (
@@ -53,7 +53,7 @@ export default function Login() {
               <User size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 type="email" value={email} onChange={(e) => setEmail(e.target.value)} required
-                placeholder="admin@portfolio.com"
+                placeholder="Enter your email"
                 className="w-full pl-10 pr-3 py-2.5 rounded-lg bg-lightBg dark:bg-darkBg border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-accent"
               />
             </div>
@@ -64,7 +64,7 @@ export default function Login() {
               <Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 type="password" value={password} onChange={(e) => setPassword(e.target.value)} required
-                placeholder="••••••••"
+                placeholder="Enter your password"
                 className="w-full pl-10 pr-3 py-2.5 rounded-lg bg-lightBg dark:bg-darkBg border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-accent"
               />
             </div>
@@ -78,7 +78,7 @@ export default function Login() {
         </form>
 
         <div className="mt-6 text-center text-xs text-gray-500 dark:text-gray-400">
-          Use the admin account configured in <code className="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">backend/.env</code> (created automatically on first server start).
+          If you have forgot your password, check <code className="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">WhatsApp</code>.
           <div className="mt-2"><Link to="/" className="hover:text-accent">← Back to site</Link></div>
         </div>
       </motion.div>
