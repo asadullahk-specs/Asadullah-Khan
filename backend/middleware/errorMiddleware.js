@@ -20,8 +20,8 @@ function errorHandler(err, req, res, next) {
         : `Upload error: ${err.message}`;
   }
 
-  // MySQL duplicate entry (e.g. unique email already exists)
-  if (err.code === 'ER_DUP_ENTRY') {
+  // MongoDB duplicate key error (code 11000) or MySQL duplicate entry
+  if (err.code === 11000 || err.code === 'ER_DUP_ENTRY') {
     statusCode = 409;
     message = 'A record with this value already exists.';
   }

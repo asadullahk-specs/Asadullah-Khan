@@ -40,6 +40,23 @@ if (process.env.NODE_ENV !== 'production') app.use(morgan('dev'));
 // Serve uploaded files statically
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// ── Database Connection Middleware for Serverless ─────────────────
+if (require.main !== module) {
+  let dbReady = false;
+  app.use(async (req, res, next) => {
+    try {
+      if (!dbReady) {
+        await connectDB();
+        await ensureAdminSeed();
+        dbReady = true;
+      }
+      next();
+    } catch (err) {
+      next(err);
+    }
+  });
+}
+
 // ── Health check ─────────────────────────────────────────────────
 app.get('/api/health', (req, res) => res.json({ success: true, message: 'API is running' }));
 
@@ -72,17 +89,6 @@ if (require.main === module) {
     });
   }
   start();
-} else {
-  // Serverless (Vercel): connect lazily on first request
-  let dbReady = false;
-  app.use(async (req, res, next) => {
-    if (!dbReady) {
-      await connectDB();
-      await ensureAdminSeed();
-      dbReady = true;
-    }
-    next();
-  });
 }
 
 module.exports = app;

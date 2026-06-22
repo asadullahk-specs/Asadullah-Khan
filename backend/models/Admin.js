@@ -11,13 +11,27 @@ const adminSchema = new mongoose.Schema(
 
 const AdminModel = mongoose.model('Admin', adminSchema);
 
+function serialize(doc) {
+  if (!doc) return null;
+  return {
+    id: doc._id.toString(),
+    name: doc.name,
+    email: doc.email,
+    password: doc.password,
+    createdAt: doc.createdAt,
+  };
+}
+
 const Admin = {
   async findByEmail(email) {
-    return AdminModel.findOne({ email: email.toLowerCase().trim() }).lean();
+    const doc = await AdminModel.findOne({ email: email.toLowerCase().trim() }).lean();
+    return serialize(doc);
   },
 
   async findById(id) {
-    return AdminModel.findById(id).select('-password').lean();
+    if (!mongoose.Types.ObjectId.isValid(id)) return null;
+    const doc = await AdminModel.findById(id).select('-password').lean();
+    return serialize(doc);
   },
 
   async count() {
@@ -26,7 +40,7 @@ const Admin = {
 
   async create({ name, email, passwordHash }) {
     const doc = await AdminModel.create({ name, email, password: passwordHash });
-    return AdminModel.findById(doc._id).select('-password').lean();
+    return this.findById(doc._id);
   },
 
   async updatePassword(id, passwordHash) {
@@ -34,7 +48,8 @@ const Admin = {
   },
 
   async updateProfile(id, { name, email }) {
-    return AdminModel.findByIdAndUpdate(id, { name, email }, { new: true }).select('-password').lean();
+    await AdminModel.findByIdAndUpdate(id, { name, email });
+    return this.findById(id);
   },
 };
 
