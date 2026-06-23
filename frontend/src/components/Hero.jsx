@@ -13,7 +13,7 @@ import useTypewriter from '../hooks/useTypewriter.js'
 export default function Hero({ hero }) {
   const typed = useTypewriter(hero.typewriterTexts)
   return (
-    <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 md:py-12 lg:py-24 grid md:grid-cols-2 gap-8 md:gap-6 lg:gap-12 items-center overflow-hidden">
+    <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16 grid md:grid-cols-2 gap-8 md:gap-6 lg:gap-12 items-center overflow-hidden">
       <motion.div
         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}
         className="order-2 md:order-1 text-center md:text-left"
@@ -23,8 +23,8 @@ export default function Hero({ hero }) {
           <span className="cursor">{typed}</span>
         </div>
         <p className="text-base sm:text-lg md:text-base lg:text-lg mb-6 max-w-xl mx-auto md:mx-0 text-justify">{hero.paragraphText}</p>
-        <div className="flex flex-wrap gap-2 mb-8 justify-center md:justify-start">
-          {hero.skills.map(s => <span key={s} className="tag">{s}</span>)}
+        <div className="text-justify mb-8">
+          {hero.skills.map(s => <span key={s} className="tag mr-2 mb-2">{s}</span>)}
         </div>
         {/* Buttons: stacked full-width below 480px, inline row above */}
         <div className="flex flex-row max-[480px]:flex-col gap-3 justify-center md:justify-start w-full sm:w-auto">

@@ -39,7 +39,7 @@ export default function CertificationsCarousel() {
   }
 
   return (
-    <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
       <h2 className="heading text-3xl sm:text-4xl text-center mb-10 tracking-wider">CERTIFICATIONS</h2>
       <div className="relative">
         <AnimatePresence mode="wait">

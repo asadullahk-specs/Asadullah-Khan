@@ -61,7 +61,7 @@ export default function Projects() {
   if (!loaded || projects.length === 0) return null
 
   return (
-    <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
       <div className="mb-10 text-center max-w-2xl mx-auto">
         <h1 className="heading text-3xl sm:text-4xl mb-3">My Projects</h1>
         <p className="mb-2 text-justify">{introText}</p>

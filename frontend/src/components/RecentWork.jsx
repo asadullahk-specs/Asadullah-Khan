@@ -23,7 +23,7 @@ export default function RecentWork() {
   if (!loaded || !recent.length) return null
 
   return (
-    <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
       <h2 className="heading text-3xl sm:text-4xl mb-10 text-center">Recent Work</h2>
       <div className="grid place-items-center">
         <div className="w-full max-w-2xl">

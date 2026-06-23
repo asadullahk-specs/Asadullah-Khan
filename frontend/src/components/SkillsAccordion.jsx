@@ -30,7 +30,7 @@ export default function SkillsAccordion() {
   if (!loaded || !skillsSection) return null
 
   return (
-    <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
       <h2 className="heading text-3xl sm:text-4xl text-center mb-4 tracking-wider">SKILLS &amp; TECHNOLOGIES</h2>
       <p className="text-center max-w-2xl mx-auto mb-10 text-justify">{skillsSection.skillsIntroParagraph}</p>
       <div className="space-y-3">
@@ -50,8 +50,8 @@ export default function SkillsAccordion() {
                   >
                     <div className="px-5 pb-5">
                       <p className="mb-3 text-sm text-justify">{c.categoryDescription}</p>
-                      <div className="flex flex-wrap gap-2">
-                        {c.subSkills.map(s => <span key={s} className="tag">{s}</span>)}
+                      <div className="text-justify">
+                        {c.subSkills.map(s => <span key={s} className="tag mr-2 mb-2">{s}</span>)}
                       </div>
                     </div>
                   </motion.div>

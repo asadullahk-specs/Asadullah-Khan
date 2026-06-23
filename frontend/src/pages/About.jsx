@@ -28,9 +28,9 @@ export default function About() {
   }, [])
 
   return (
-    <div className="py-12">
+    <div>
       {loaded && aboutPage && (
-        <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
           <div className="card p-8 sm:p-10">
             <h1 className="heading text-3xl sm:text-4xl mb-6">About Me</h1>
             <div className="space-y-4 mb-6">
@@ -38,8 +38,8 @@ export default function About() {
                 <p key={i} className="text-justify">{p}</p>
               ))}
             </div>
-            <div className="flex flex-wrap gap-2 mb-8">
-              {aboutPage.aboutPageSkills.map(s => <span key={s} className="tag">{s}</span>)}
+            <div className="text-justify mb-8">
+              {aboutPage.aboutPageSkills.map(s => <span key={s} className="tag mr-2 mb-2">{s}</span>)}
             </div>
             <a href={aboutPage.cvAttachmentUrl} target="_blank" rel="noreferrer" className="btn-primary">
               <Download size={16} /> Download CV

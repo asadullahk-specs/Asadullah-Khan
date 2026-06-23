@@ -51,7 +51,7 @@ body {
 }
 
 .tag {
-  @apply text-xs px-3 py-1 rounded-lg bg-accent/10 text-accent font-medium;
+  @apply text-xs px-3 py-1 rounded-lg bg-accent/10 text-accent font-medium inline-block;
 }
 
 /* typewriter cursor */
