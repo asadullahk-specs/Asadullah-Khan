@@ -28,6 +28,16 @@ export default function CertificationsCarousel() {
   const prev = () => setIdx((idx - 1 + total) % total)
   const next = () => setIdx((idx + 1) % total)
 
+  const getPdfViewerUrl = (url) => {
+    if (!url) return '#'
+    // If it's a google drive download link, convert it to view link
+    const match = url.match(/[?&]id=([a-zA-Z0-9_-]+)/)
+    if (match && /drive\.google\.com/.test(url)) {
+      return `https://drive.google.com/file/d/${match[1]}/view`
+    }
+    return url
+  }
+
   return (
     <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
       <h2 className="heading text-3xl sm:text-4xl text-center mb-10 tracking-wider">CERTIFICATIONS</h2>
@@ -45,7 +55,7 @@ export default function CertificationsCarousel() {
               <div className="flex items-center justify-between gap-4 flex-wrap">
                 <p className="text-xs">{c.duration}</p>
                 {/* Opens PDF in a new tab — no download attribute */}
-                <a href={c.pdfDocument} target="_blank" rel="noreferrer" className="btn-outline">
+                <a href={getPdfViewerUrl(c.pdfDocument)} target="_blank" rel="noreferrer" className="btn-outline">
                   <FileText size={16} /> View PDF
                 </a>
               </div>

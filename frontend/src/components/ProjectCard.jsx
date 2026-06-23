@@ -21,7 +21,7 @@ export default function ProjectCard({ p, index = 0 }) {
           </div>
         )}
         <div className="mt-auto flex items-center justify-between gap-3 pt-1">
-          <a href={p.detailsLink} className="text-accent text-sm font-medium inline-flex items-center gap-1 hover:gap-2 transition-all">
+          <a href={p.detailsLink} target="_blank" rel="noreferrer" className="text-accent text-sm font-medium inline-flex items-center gap-1 hover:gap-2 transition-all">
             View Details <ArrowRight size={14} />
           </a>
           {p.projectCategory && <span className="tag whitespace-nowrap">{p.projectCategory}</span>}

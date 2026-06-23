@@ -27,9 +27,9 @@ export default function Hero({ hero }) {
           {hero.skills.map(s => <span key={s} className="tag">{s}</span>)}
         </div>
         {/* Buttons: stacked full-width below 480px, inline row above */}
-        <div className="flex flex-col max-[480px]:gap-3 max-[480px]:w-full sm:flex-row flex-wrap gap-3 justify-center md:justify-start">
-          <a href={hero.cvDoc} download className="btn-primary max-[480px]:w-full max-[480px]:justify-center"><Download size={16} /> Download CV</a>
-          <Link to="/contact" className="btn-outline max-[480px]:w-full max-[480px]:justify-center"><Mail size={16} /> Contact Me</Link>
+        <div className="flex flex-row max-[480px]:flex-col gap-3 justify-center md:justify-start w-full sm:w-auto">
+          <a href={hero.cvDoc} download className="btn-primary max-[480px]:w-full justify-center"><Download size={16} /> Download CV</a>
+          <Link to="/contact" className="btn-outline max-[480px]:w-full justify-center"><Mail size={16} /> Contact Me</Link>
         </div>
       </motion.div>
       <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6 }}

@@ -118,8 +118,8 @@ function parseDriveLink(raw, kind) {
     // Use thumbnail proxy — works publicly when file is shared as "Anyone with the link"
     return `https://drive.google.com/thumbnail?id=${id}&sz=w800`
   }
-  // Documents: use the preview/export URL
-  return `https://drive.google.com/uc?export=download&id=${id}`
+  // Documents: use the viewer link
+  return `https://drive.google.com/file/d/${id}/view`
 }
 
 function isDriveLink(url) {

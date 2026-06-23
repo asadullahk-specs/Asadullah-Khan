@@ -14,7 +14,7 @@ export default function AboutPreview({ aboutPreview }) {
           initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}
           className="order-2 md:order-1 flex justify-center"
         >
-          <div className="w-64 h-64 xs:w-72 xs:h-72 sm:w-80 sm:h-80 md:w-72 md:h-72 lg:w-96 lg:h-96 rounded-xl overflow-hidden shadow-xl flex-shrink-0">
+          <div className="w-full aspect-square sm:w-80 sm:h-80 md:w-72 md:h-72 lg:w-96 lg:h-96 rounded-xl overflow-hidden shadow-xl flex-shrink-0">
             <img
               src={aboutPreview.aboutPreviewImage} alt="About preview"
               className="w-full h-full object-cover"

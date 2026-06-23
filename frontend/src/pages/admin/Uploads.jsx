@@ -12,7 +12,7 @@ function parseDriveLink(raw, kind = 'image') {
   if (!idMatch) return raw
   const id = idMatch[1]
   if (kind === 'image') return `https://drive.google.com/thumbnail?id=${id}&sz=w800`
-  return `https://drive.google.com/uc?export=download&id=${id}`
+  return `https://drive.google.com/file/d/${id}/view`
 }
 
 function isDriveLink(url) {
