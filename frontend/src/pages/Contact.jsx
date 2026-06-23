@@ -71,14 +71,14 @@ export default function Contact() {
 
         <motion.form initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} onSubmit={submit} className="card p-6 sm:p-8 space-y-4">
           <div className="grid sm:grid-cols-2 gap-4">
-            <Field label="First Name" value={form.firstName} onChange={update('firstName')} required />
-            <Field label="Last Name" value={form.lastName} onChange={update('lastName')} required />
+            <Field label="First Name" placeholder="First Name" value={form.firstName} onChange={update('firstName')} required />
+            <Field label="Last Name" placeholder="Last Name" value={form.lastName} onChange={update('lastName')} required />
           </div>
-          <Field label="Email" type="email" value={form.email} onChange={update('email')} required />
-          <Field label="Phone" value={form.phone} onChange={update('phone')} />
+          <Field label="Email" placeholder="Email" type="email" value={form.email} onChange={update('email')} required />
+          <Field label="Phone" placeholder="Phone" value={form.phone} onChange={update('phone')} />
           <div>
             <label className="block text-sm mb-1 heading">Message</label>
-            <textarea required rows={5} value={form.message} onChange={update('message')}
+            <textarea placeholder="Message" required rows={5} value={form.message} onChange={update('message')}
               className="w-full px-4 py-2.5 rounded-xl bg-lightBg dark:bg-darkBg border border-gray-200 dark:border-gray-700 focus:border-accent focus:outline-none resize-none" />
           </div>
           <button type="submit" disabled={sending} className="btn-primary w-full justify-center disabled:opacity-60">
