@@ -1,5 +1,5 @@
-import { useRef, useState } from 'react'
-import api from '../../services/api.js'
+import { useState } from 'react'
+import { Link2, CheckCircle2, XCircle } from 'lucide-react'
 
 // Shared admin UI primitives — keep markup consistent across editors.
 export function PageHeader({ title, subtitle, actions }) {
@@ -101,60 +101,116 @@ export function Spinner({ label = 'Loading…' }) {
   )
 }
 
-// A URL text field paired with a real file-upload button. Typing a URL
-// directly still works (e.g. pasting an external image link); clicking
-// "Upload" picks a local file, sends it to POST /api/uploads, and fills
-// the field with the URL the backend returns. `kind="image"` restricts
-// the file picker to image types and shows a thumbnail preview.
+// Converts a Google Drive share link into a direct-access URL.
+// Supports both /file/d/FILE_ID/... and ?id=FILE_ID formats.
+// For images we use the thumbnail endpoint; for docs we use the export/preview endpoint.
+function parseDriveLink(raw, kind) {
+  if (!raw) return raw
+  // Already a direct drive URL — return as-is
+  if (/drive\.google\.com\/uc\?/.test(raw) || /drive\.google\.com\/thumbnail/.test(raw)) return raw
+  // Extract file ID from share URL
+  const idMatch =
+    raw.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) ||
+    raw.match(/[?&]id=([a-zA-Z0-9_-]+)/)
+  if (!idMatch) return raw // not a Drive link — pass through unchanged
+  const id = idMatch[1]
+  if (kind === 'image') {
+    // Use thumbnail proxy — works publicly when file is shared as "Anyone with the link"
+    return `https://drive.google.com/thumbnail?id=${id}&sz=w800`
+  }
+  // Documents: use the preview/export URL
+  return `https://drive.google.com/uc?export=download&id=${id}`
+}
+
+function isDriveLink(url) {
+  return /drive\.google\.com/.test(url || '')
+}
+
+function isValidDriveDomain(url) {
+  if (!url) return null // empty = neutral
+  if (isDriveLink(url)) return true
+  // Allow other plain URLs (http/https)
+  return /^https?:\/\//.test(url) ? true : false
+}
+
+// UploadField — accepts a Google Drive sharing link (or any HTTPS URL).
+// When a Drive link is detected it is automatically converted to a
+// direct-access URL suitable for <img> tags or download links.
+// Hint text and a status badge guide the user.
 export function UploadField({ value, onChange, kind = 'image', placeholder }) {
-  const inputRef = useRef(null)
-  const [busy, setBusy] = useState(false)
+  const [localInput, setLocalInput] = useState(value || '')
   const [error, setError] = useState('')
 
-  const accept = kind === 'image' ? 'image/*' : '.pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-
-  const handleFile = async (e) => {
-    const file = e.target.files?.[0]
-    e.target.value = ''
-    if (!file) return
+  const commit = (raw) => {
     setError('')
-    setBusy(true)
-    try {
-      const formData = new FormData()
-      formData.append('file', file)
-      const { data } = await api.post('/uploads', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      })
-      onChange(data.data.url)
-    } catch (err) {
-      setError(err?.response?.data?.message || 'Upload failed. Please try again.')
-    } finally {
-      setBusy(false)
+    const cleaned = raw.trim()
+    if (!cleaned) { onChange(''); return }
+    if (isDriveLink(cleaned)) {
+      const converted = parseDriveLink(cleaned, kind)
+      onChange(converted)
+    } else if (/^https?:\/\//.test(cleaned)) {
+      onChange(cleaned)
+    } else {
+      setError('Please paste a valid Google Drive link or an HTTPS URL.')
     }
   }
 
-  const isImage = kind === 'image' && value && /\.(png|jpe?g|gif|webp|svg)(\?.*)?$/i.test(value)
+  const handleChange = (e) => {
+    setLocalInput(e.target.value)
+    if (!e.target.value.trim()) { onChange(''); setError('') }
+  }
+
+  const handleBlur = () => commit(localInput)
+  const handlePaste = (e) => {
+    const pasted = e.clipboardData.getData('text')
+    setLocalInput(pasted)
+    setTimeout(() => commit(pasted), 0)
+  }
+
+  // Sync if parent changes value externally
+  const displayValue = value || ''
+  const valid = isValidDriveDomain(displayValue)
+  const showThumb = kind === 'image' && displayValue && valid
+  const showDocLink = kind !== 'image' && displayValue && valid
 
   return (
     <div>
-      <div className="flex gap-2">
+      {/* Hint banner */}
+      <div className="flex items-center gap-1.5 mb-2 text-xs text-gray-500 dark:text-gray-400">
+        <Link2 size={12} className="shrink-0 text-accent" />
+        <span>Paste a <strong className="text-gray-700 dark:text-gray-300">Google Drive sharing link</strong> — make sure the file is shared as &quot;Anyone with the link&quot;.</span>
+      </div>
+      <div className="flex gap-2 items-center">
         <Input
-          value={value || ''}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder || (kind === 'image' ? 'https://… or upload a file' : 'https://… or upload a PDF/DOC')}
+          value={localInput}
+          onChange={handleChange}
+          onBlur={handleBlur}
+          onPaste={handlePaste}
+          placeholder={placeholder || (kind === 'image'
+            ? 'Paste Google Drive image link…'
+            : 'Paste Google Drive PDF/DOC link…'
+          )}
         />
-        <input ref={inputRef} type="file" accept={accept} onChange={handleFile} className="hidden" />
-        <Button type="button" variant="secondary" onClick={() => inputRef.current?.click()} disabled={busy}>
-          {busy ? 'Uploading…' : 'Upload'}
-        </Button>
+        {displayValue && valid !== null && (
+          <span className="shrink-0">
+            {valid
+              ? <CheckCircle2 size={18} className="text-green-500" />
+              : <XCircle size={18} className="text-red-500" />}
+          </span>
+        )}
       </div>
       {error && <span className="block text-xs text-red-500 mt-1.5">{error}</span>}
-      {isImage && (
-        <img src={value} alt="preview" className="mt-2 h-20 w-20 object-cover rounded-lg border border-gray-200 dark:border-gray-700" />
+      {showThumb && (
+        <img
+          src={displayValue}
+          alt="preview"
+          className="mt-2 h-20 w-20 object-cover rounded-lg border border-gray-200 dark:border-gray-700"
+          onError={(e) => { e.target.style.display = 'none' }}
+        />
       )}
-      {kind !== 'image' && value && (
-        <a href={value} target="_blank" rel="noreferrer" className="inline-block mt-1.5 text-xs text-accent hover:underline">
-          View current file →
+      {showDocLink && (
+        <a href={displayValue} target="_blank" rel="noreferrer" className="inline-block mt-1.5 text-xs text-accent hover:underline">
+          View / Download file →
         </a>
       )}
     </div>

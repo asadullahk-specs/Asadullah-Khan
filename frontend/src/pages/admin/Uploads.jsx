@@ -1,106 +1,185 @@
 import { useEffect, useState } from 'react'
-import { Upload as UploadIcon, Trash2, FileText, Image as ImgIcon, Copy } from 'lucide-react'
-import api from '../../services/api.js'
-import { PageHeader, Card, Button, Toast, Spinner } from '../../components/admin/ui.jsx'
+import { Link2, Trash2, Copy, Plus, CheckCircle2, ExternalLink } from 'lucide-react'
+import { PageHeader, Card, Button, Toast, Spinner, Input } from '../../components/admin/ui.jsx'
 
-function formatSize(bytes) {
-  if (!bytes) return ''
-  if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-  return `${Math.round(bytes / 1024)} KB`
+// Convert a Google Drive share link to a direct-access URL.
+function parseDriveLink(raw, kind = 'image') {
+  if (!raw) return raw
+  if (/drive\.google\.com\/uc\?/.test(raw) || /drive\.google\.com\/thumbnail/.test(raw)) return raw
+  const idMatch =
+    raw.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) ||
+    raw.match(/[?&]id=([a-zA-Z0-9_-]+)/)
+  if (!idMatch) return raw
+  const id = idMatch[1]
+  if (kind === 'image') return `https://drive.google.com/thumbnail?id=${id}&sz=w800`
+  return `https://drive.google.com/uc?export=download&id=${id}`
+}
+
+function isDriveLink(url) {
+  return /drive\.google\.com/.test(url || '')
+}
+
+function guessKind(name = '') {
+  const n = name.toLowerCase()
+  if (/\.(pdf|doc|docx)$/.test(n)) return 'document'
+  return 'image'
+}
+
+const STORAGE_KEY = 'portfolio_drive_links'
+
+function loadLinks() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]') } catch { return [] }
+}
+function saveLinks(links) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(links))
 }
 
 export default function Uploads() {
-  const [files, setFiles] = useState([])
+  const [links, setLinks] = useState([])
   const [loading, setLoading] = useState(true)
-  const [uploading, setUploading] = useState(false)
   const [toast, setToast] = useState({ message: '', type: 'success' })
 
-  const load = () => {
-    api.get('/uploads')
-      .then(({ data }) => { if (data?.data) setFiles(data.data) })
-      .catch(() => setToast({ message: 'Could not load uploads.', type: 'error' }))
-      .finally(() => setLoading(false))
+  // Form state for adding a new link
+  const [newName, setNewName] = useState('')
+  const [newUrl, setNewUrl] = useState('')
+  const [newError, setNewError] = useState('')
+
+  useEffect(() => {
+    setLinks(loadLinks())
+    setLoading(false)
+  }, [])
+
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type })
+    setTimeout(() => setToast({ message: '', type: 'success' }), 2200)
   }
 
-  useEffect(load, [])
-
-  const onUpload = async (e) => {
-    const list = Array.from(e.target.files || [])
-    e.target.value = ''
-    if (!list.length) return
-    setUploading(true)
-    try {
-      await Promise.all(
-        list.map((f) => {
-          const formData = new FormData()
-          formData.append('file', f)
-          return api.post('/uploads', formData, { headers: { 'Content-Type': 'multipart/form-data' } })
-        })
-      )
-      setToast({ message: `${list.length} file(s) uploaded.`, type: 'success' })
-      load()
-    } catch (err) {
-      setToast({ message: err?.response?.data?.message || 'Upload failed.', type: 'error' })
-    } finally {
-      setUploading(false)
-      setTimeout(() => setToast({ message: '', type: 'success' }), 2500)
+  const addLink = () => {
+    setNewError('')
+    const name = newName.trim()
+    const url = newUrl.trim()
+    if (!name) { setNewError('Please enter a name for this link.'); return }
+    if (!url) { setNewError('Please paste a Google Drive link.'); return }
+    if (!isDriveLink(url) && !/^https?:\/\//.test(url)) {
+      setNewError('Please paste a valid Google Drive sharing link or HTTPS URL.')
+      return
     }
+    const kind = guessKind(name)
+    const converted = isDriveLink(url) ? parseDriveLink(url, kind) : url
+    const entry = { id: Date.now().toString(), name, url: converted, kind, addedAt: new Date().toISOString() }
+    const next = [entry, ...links]
+    setLinks(next)
+    saveLinks(next)
+    setNewName('')
+    setNewUrl('')
+    showToast('Link saved.')
   }
 
-  const remove = async (id) => {
-    if (!confirm('Delete this file?')) return
-    try {
-      await api.delete(`/uploads/${id}`)
-      setFiles((prev) => prev.filter((f) => f.id !== id))
-    } catch (err) {
-      setToast({ message: err?.response?.data?.message || 'Failed to delete.', type: 'error' })
-      setTimeout(() => setToast({ message: '', type: 'success' }), 2000)
-    }
+  const remove = (id) => {
+    if (!confirm('Remove this link?')) return
+    const next = links.filter((l) => l.id !== id)
+    setLinks(next)
+    saveLinks(next)
+    showToast('Link removed.')
   }
 
   const copy = (url) => {
     navigator.clipboard.writeText(url)
-    setToast({ message: 'URL copied.', type: 'success' })
-    setTimeout(() => setToast({ message: '', type: 'success' }), 1500)
+    showToast('URL copied to clipboard.')
   }
 
-  if (loading) return <Spinner label="Loading uploads…" />
+  if (loading) return <Spinner label="Loading…" />
 
   return (
     <div>
       <PageHeader
-        title="Uploads"
-        subtitle="Manage images, PDFs, and documents used across the site."
-        actions={
-          <label className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium bg-accent hover:bg-accentHover text-white cursor-pointer">
-            <UploadIcon size={16} /> {uploading ? 'Uploading…' : 'Upload Files'}
-            <input type="file" multiple className="hidden" onChange={onUpload} disabled={uploading} />
-          </label>
-        }
+        title="Drive Links"
+        subtitle="Store Google Drive sharing links here and copy them into any editor field."
       />
+
+      {/* Add new link */}
+      <Card className="mb-6">
+        <h3 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+          <Link2 size={16} className="text-accent" /> Add Google Drive Link
+        </h3>
+        <div className="flex items-center gap-1.5 mb-3 text-xs text-gray-500 dark:text-gray-400 bg-accent/5 border border-accent/20 rounded-lg px-3 py-2">
+          <CheckCircle2 size={13} className="shrink-0 text-accent" />
+          <span>In Google Drive, open the file → Share → <strong className="text-gray-700 dark:text-gray-300">Anyone with the link</strong> → Copy link → paste it below.</span>
+        </div>
+        <div className="grid sm:grid-cols-[1fr_2fr_auto] gap-3 items-end">
+          <div>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Name / Label</label>
+            <Input
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              placeholder="e.g. Hero Image, My CV…"
+              onKeyDown={(e) => e.key === 'Enter' && addLink()}
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Google Drive Sharing Link</label>
+            <Input
+              value={newUrl}
+              onChange={(e) => setNewUrl(e.target.value)}
+              placeholder="https://drive.google.com/file/d/…"
+              onPaste={(e) => {
+                const p = e.clipboardData.getData('text')
+                setNewUrl(p)
+                e.preventDefault()
+              }}
+              onKeyDown={(e) => e.key === 'Enter' && addLink()}
+            />
+          </div>
+          <Button onClick={addLink} className="shrink-0">
+            <Plus size={15} /> Save Link
+          </Button>
+        </div>
+        {newError && <p className="text-xs text-red-500 mt-2">{newError}</p>}
+      </Card>
+
+      {/* Saved links list */}
       <Card>
-        {files.length === 0 ? (
-          <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-10">No files uploaded yet.</p>
+        {links.length === 0 ? (
+          <div className="text-center py-12">
+            <Link2 size={36} className="mx-auto text-gray-300 dark:text-gray-600 mb-3" />
+            <p className="text-sm text-gray-500 dark:text-gray-400">No Drive links saved yet.</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Add your first link above, then paste the copied URL into any editor field.</p>
+          </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {files.map((f) => (
-              <div key={f.id} className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-                <div className="aspect-square bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                  {f.type === 'image'
-                    ? <img src={f.url} alt="" className="w-full h-full object-cover" />
-                    : <FileText size={48} className="text-gray-400" />}
+          <div className="divide-y divide-gray-100 dark:divide-gray-700/60">
+            {links.map((l) => (
+              <div key={l.id} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
+                {/* Thumbnail or icon */}
+                <div className="h-11 w-11 shrink-0 rounded-lg bg-gray-100 dark:bg-gray-800 overflow-hidden flex items-center justify-center">
+                  {l.kind === 'image' ? (
+                    <img
+                      src={l.url}
+                      alt=""
+                      className="w-full h-full object-cover"
+                      onError={(e) => { e.target.style.display = 'none' }}
+                    />
+                  ) : (
+                    <ExternalLink size={20} className="text-gray-400" />
+                  )}
                 </div>
-                <div className="p-3">
-                  <div className="flex items-center gap-1.5 mb-1">
-                    {f.type === 'image' ? <ImgIcon size={12} /> : <FileText size={12} />}
-                    <span className="text-xs text-gray-500 dark:text-gray-400 uppercase">{f.type}</span>
-                  </div>
-                  <div className="text-sm font-medium text-gray-900 dark:text-white truncate">{f.name}</div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">{formatSize(f.size)}</div>
-                  <div className="flex gap-1.5">
-                    <Button variant="secondary" className="flex-1 justify-center !px-2 !py-1.5" onClick={() => copy(f.url)}><Copy size={14} /></Button>
-                    <Button variant="danger" className="!px-2 !py-1.5" onClick={() => remove(f.id)}><Trash2 size={14} /></Button>
-                  </div>
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium text-gray-900 dark:text-white truncate">{l.name}</div>
+                  <div className="text-xs text-gray-400 dark:text-gray-500 truncate">{l.url}</div>
+                </div>
+                {/* Actions */}
+                <div className="flex gap-1.5 shrink-0">
+                  <Button variant="secondary" className="!px-2.5 !py-1.5" onClick={() => copy(l.url)} title="Copy URL">
+                    <Copy size={14} />
+                  </Button>
+                  <a href={l.url} target="_blank" rel="noreferrer">
+                    <Button variant="secondary" className="!px-2.5 !py-1.5" title="Open file">
+                      <ExternalLink size={14} />
+                    </Button>
+                  </a>
+                  <Button variant="danger" className="!px-2.5 !py-1.5" onClick={() => remove(l.id)} title="Remove">
+                    <Trash2 size={14} />
+                  </Button>
                 </div>
               </div>
             ))}
