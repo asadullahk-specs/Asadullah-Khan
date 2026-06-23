@@ -2,27 +2,28 @@ import { useEffect, useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Filter, SlidersHorizontal, X } from 'lucide-react'
 import api from '../services/api.js'
-import { projects as projectsFallback, projectsPage as projectsPageFallback } from '../data/dummy.js'
 import ProjectCard from '../components/ProjectCard.jsx'
 
 export default function Projects() {
   const [active, setActive] = useState('All Projects')
   const [filterOpen, setFilterOpen] = useState(false)
-  const [projects, setProjects] = useState(projectsFallback)
-  const [projectsPage, setProjectsPage] = useState(projectsPageFallback)
+  const [projects, setProjects] = useState([])        // empty until backend
+  const [introText, setIntroText] = useState('')
+  const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
     let mounted = true
     api.get('/projects')
       .then(({ data }) => { if (mounted && data?.data?.length) setProjects(data.data) })
-      .catch(() => { /* keep fallback */ })
+      .catch(() => { /* backend offline */ })
+      .finally(() => { if (mounted) setLoaded(true) })
     api.get('/projects/page-settings')
       .then(({ data }) => {
         if (mounted && data?.data?.projectsPageIntroText) {
-          setProjectsPage({ projectsPageIntroText: data.data.projectsPageIntroText })
+          setIntroText(data.data.projectsPageIntroText)
         }
       })
-      .catch(() => { /* keep fallback */ })
+      .catch(() => { /* keep empty */ })
     return () => { mounted = false }
   }, [])
 
@@ -57,11 +58,13 @@ export default function Projects() {
     </aside>
   )
 
+  if (!loaded || projects.length === 0) return null
+
   return (
     <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="mb-10 text-center max-w-2xl mx-auto">
         <h1 className="heading text-3xl sm:text-4xl mb-3">My Projects</h1>
-        <p className="mb-2">{projectsPage.projectsPageIntroText}</p>
+        <p className="mb-2 text-justify">{introText}</p>
         <p className="text-sm text-accent">Showing {filtered.length} of {projects.length} projects</p>
       </div>
 

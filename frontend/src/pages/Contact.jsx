@@ -5,19 +5,27 @@ import api from '../services/api.js'
 import { contact as contactFallback } from '../data/dummy.js'
 
 export default function Contact() {
-  const [contact, setContact] = useState(contactFallback)
+  const [contact, setContact] = useState(null)
   const [form, setForm] = useState({ firstName: '', lastName: '', email: '', phone: '', message: '' })
   const [sent, setSent] = useState(false)
   const [error, setError] = useState('')
   const [sending, setSending] = useState(false)
+  const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
     let mounted = true
     api.get('/contact-settings')
-      .then(({ data }) => { if (mounted && data?.data) setContact({ ...contactFallback, ...data.data }) })
-      .catch(() => { /* keep fallback */ })
+      .then(({ data }) => {
+        if (mounted && data?.data) {
+          setContact(data.data)
+          setLoaded(true)
+        }
+      })
+      .catch(() => { /* backend offline — don't show page */ })
     return () => { mounted = false }
   }, [])
+
+  if (!loaded || !contact) return null
 
   const update = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }))
 

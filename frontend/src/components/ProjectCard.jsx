@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { ExternalLink } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 
 export default function ProjectCard({ p, index = 0 }) {
   return (
@@ -14,7 +14,7 @@ export default function ProjectCard({ p, index = 0 }) {
       </div>
       <div className="p-6 flex flex-col flex-1">
         <h3 className="heading text-xl mb-2">{p.title}</h3>
-        <p className="text-sm mb-4 line-clamp-2">{p.description}</p>
+        <p className="text-sm mb-4 line-clamp-2 text-justify">{p.description}</p>
         {p.technologies?.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-5">
             {p.technologies.map(t => <span key={t} className="tag text-[10px]">{t}</span>)}
@@ -22,7 +22,7 @@ export default function ProjectCard({ p, index = 0 }) {
         )}
         <div className="mt-auto flex items-center justify-between gap-3 pt-1">
           <a href={p.detailsLink} className="text-accent text-sm font-medium inline-flex items-center gap-1 hover:gap-2 transition-all">
-            View Details <ExternalLink size={14} />
+            View Details <ArrowRight size={14} />
           </a>
           {p.projectCategory && <span className="tag whitespace-nowrap">{p.projectCategory}</span>}
         </div>

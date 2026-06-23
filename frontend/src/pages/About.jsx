@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Download } from 'lucide-react'
 import api from '../services/api.js'
-import { aboutPage as aboutPageFallback } from '../data/dummy.js'
 import SkillsAccordion from '../components/SkillsAccordion.jsx'
 import CertificationsCarousel from '../components/CertificationsCarousel.jsx'
 
 export default function About() {
-  const [aboutPage, setAboutPage] = useState(aboutPageFallback)
+  const [aboutPage, setAboutPage] = useState(null) // null = not loaded
+  const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -14,30 +14,39 @@ export default function About() {
       .then(({ data }) => {
         if (!active || !data?.data) return
         const a = data.data
-        setAboutPage({
-          aboutPageParagraphs: a.aboutPageParagraphs?.length ? a.aboutPageParagraphs : aboutPageFallback.aboutPageParagraphs,
-          aboutPageSkills: a.aboutPageSkills?.length ? a.aboutPageSkills : aboutPageFallback.aboutPageSkills,
-          cvAttachmentUrl: a.cvAttachmentUrl || aboutPageFallback.cvAttachmentUrl,
-        })
+        if (a.aboutPageParagraphs?.length || a.aboutPageSkills?.length) {
+          setAboutPage({
+            aboutPageParagraphs: a.aboutPageParagraphs?.length ? a.aboutPageParagraphs : [],
+            aboutPageSkills: a.aboutPageSkills?.length ? a.aboutPageSkills : [],
+            cvAttachmentUrl: a.cvAttachmentUrl || '#',
+          })
+        }
       })
-      .catch(() => { /* keep fallback */ })
+      .catch(() => { /* backend offline — nothing shown */ })
+      .finally(() => { if (active) setLoaded(true) })
     return () => { active = false }
   }, [])
 
   return (
     <div className="py-12">
-      <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="card p-8 sm:p-10">
-          <h1 className="heading text-3xl sm:text-4xl mb-6">About Me</h1>
-          <div className="space-y-4 mb-6">
-            {aboutPage.aboutPageParagraphs.map((p, i) => <p key={i}>{p}</p>)}
+      {loaded && aboutPage && (
+        <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="card p-8 sm:p-10">
+            <h1 className="heading text-3xl sm:text-4xl mb-6">About Me</h1>
+            <div className="space-y-4 mb-6">
+              {aboutPage.aboutPageParagraphs.map((p, i) => (
+                <p key={i} className="text-justify">{p}</p>
+              ))}
+            </div>
+            <div className="flex flex-wrap gap-2 mb-8">
+              {aboutPage.aboutPageSkills.map(s => <span key={s} className="tag">{s}</span>)}
+            </div>
+            <a href={aboutPage.cvAttachmentUrl} target="_blank" rel="noreferrer" className="btn-primary">
+              <Download size={16} /> Download CV
+            </a>
           </div>
-          <div className="flex flex-wrap gap-2 mb-8">
-            {aboutPage.aboutPageSkills.map(s => <span key={s} className="tag">{s}</span>)}
-          </div>
-          <a href={aboutPage.cvAttachmentUrl} download className="btn-primary"><Download size={16} /> Download CV</a>
-        </div>
-      </section>
+        </section>
+      )}
       <SkillsAccordion />
       <CertificationsCarousel />
     </div>

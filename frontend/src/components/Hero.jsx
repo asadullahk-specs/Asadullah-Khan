@@ -7,10 +7,9 @@ import useTypewriter from '../hooks/useTypewriter.js'
 // (falling back to src/data/dummy.js while loading or if the request fails).
 //
 // Layout behaviour:
-//  - >=768px (md+): side-by-side, text left / image right. Sizing is
-//    intentionally smaller at the md tier (768–1023px) than at lg+ (1024px+),
-//    since the two columns are squeezed into a narrower viewport.
+//  - >=768px (md+): side-by-side, text left / image right.
 //  - <768px: stacks with the image on top and centered text below.
+//  - <480px (max-[480px]): buttons stack vertically with equal width.
 export default function Hero({ hero }) {
   const typed = useTypewriter(hero.typewriterTexts)
   return (
@@ -23,13 +22,14 @@ export default function Hero({ hero }) {
         <div className="text-xl sm:text-2xl md:text-xl lg:text-3xl font-semibold text-accent mb-6 h-9 md:h-8 lg:h-10">
           <span className="cursor">{typed}</span>
         </div>
-        <p className="text-base sm:text-lg md:text-base lg:text-lg mb-6 max-w-xl mx-auto md:mx-0">{hero.paragraphText}</p>
+        <p className="text-base sm:text-lg md:text-base lg:text-lg mb-6 max-w-xl mx-auto md:mx-0 text-justify">{hero.paragraphText}</p>
         <div className="flex flex-wrap gap-2 mb-8 justify-center md:justify-start">
           {hero.skills.map(s => <span key={s} className="tag">{s}</span>)}
         </div>
-        <div className="flex flex-wrap gap-3 justify-center md:justify-start">
-          <a href={hero.cvDoc} download className="btn-primary"><Download size={16} /> Download CV</a>
-          <Link to="/contact" className="btn-outline"><Mail size={16} /> Contact Me</Link>
+        {/* Buttons: stacked full-width below 480px, inline row above */}
+        <div className="flex flex-col max-[480px]:gap-3 max-[480px]:w-full sm:flex-row flex-wrap gap-3 justify-center md:justify-start">
+          <a href={hero.cvDoc} download className="btn-primary max-[480px]:w-full max-[480px]:justify-center"><Download size={16} /> Download CV</a>
+          <Link to="/contact" className="btn-outline max-[480px]:w-full max-[480px]:justify-center"><Mail size={16} /> Contact Me</Link>
         </div>
       </motion.div>
       <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6 }}

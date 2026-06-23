@@ -1,13 +1,11 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import api from '../services/api.js'
-import { projects as projectsFallback } from '../data/dummy.js'
 import ProjectCard from './ProjectCard.jsx'
 
 export default function RecentWork() {
-  const [recent, setRecent] = useState(
-    () => projectsFallback.filter(p => p.isRecent).slice(0, 1)
-  )
+  const [recent, setRecent] = useState([]) // empty until backend responds
+  const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -16,11 +14,13 @@ export default function RecentWork() {
         if (!active) return
         if (data?.data?.length) setRecent(data.data.slice(0, 1))
       })
-      .catch(() => { /* keep fallback */ })
+      .catch(() => { /* backend offline — stay hidden */ })
+      .finally(() => { if (active) setLoaded(true) })
     return () => { active = false }
   }, [])
 
-  if (!recent.length) return null
+  // Only render once we've tried the backend AND have real projects
+  if (!loaded || !recent.length) return null
 
   return (
     <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">

@@ -2,11 +2,11 @@ import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronDown } from 'lucide-react'
 import api from '../services/api.js'
-import { skillsSection as skillsSectionFallback } from '../data/dummy.js'
 
 export default function SkillsAccordion() {
   const [open, setOpen] = useState(0)
-  const [skillsSection, setSkillsSection] = useState(skillsSectionFallback)
+  const [skillsSection, setSkillsSection] = useState(null) // null = not yet loaded
+  const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -14,19 +14,25 @@ export default function SkillsAccordion() {
       .then(({ data }) => {
         if (!active || !data?.data) return
         const s = data.data
-        setSkillsSection({
-          skillsIntroParagraph: s.skillsIntroParagraph || skillsSectionFallback.skillsIntroParagraph,
-          skillsCategories: s.skillsCategories?.length ? s.skillsCategories : skillsSectionFallback.skillsCategories,
-        })
+        if (s.skillsCategories?.length) {
+          setSkillsSection({
+            skillsIntroParagraph: s.skillsIntroParagraph || '',
+            skillsCategories: s.skillsCategories,
+          })
+        }
       })
-      .catch(() => { /* keep fallback */ })
+      .catch(() => { /* backend offline — stay hidden */ })
+      .finally(() => { if (active) setLoaded(true) })
     return () => { active = false }
   }, [])
 
+  // Only render once we've tried the backend AND have real data
+  if (!loaded || !skillsSection) return null
+
   return (
     <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-      <h2 className="heading text-3xl sm:text-4xl text-center mb-4 tracking-wider">SKILLS & TECHNOLOGIES</h2>
-      <p className="text-center max-w-2xl mx-auto mb-10">{skillsSection.skillsIntroParagraph}</p>
+      <h2 className="heading text-3xl sm:text-4xl text-center mb-4 tracking-wider">SKILLS &amp; TECHNOLOGIES</h2>
+      <p className="text-center max-w-2xl mx-auto mb-10 text-justify">{skillsSection.skillsIntroParagraph}</p>
       <div className="space-y-3">
         {skillsSection.skillsCategories.map((c, i) => {
           const isOpen = open === i
@@ -43,7 +49,7 @@ export default function SkillsAccordion() {
                     transition={{ duration: 0.3 }}
                   >
                     <div className="px-5 pb-5">
-                      <p className="mb-3 text-sm">{c.categoryDescription}</p>
+                      <p className="mb-3 text-sm text-justify">{c.categoryDescription}</p>
                       <div className="flex flex-wrap gap-2">
                         {c.subSkills.map(s => <span key={s} className="tag">{s}</span>)}
                       </div>

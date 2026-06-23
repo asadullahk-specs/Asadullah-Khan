@@ -3,12 +3,11 @@ import api from '../services/api.js'
 import Hero from '../components/Hero.jsx'
 import AboutPreview from '../components/AboutPreview.jsx'
 import RecentWork from '../components/RecentWork.jsx'
-import { hero as heroFallback, aboutPreview as aboutPreviewFallback } from '../data/dummy.js'
 
 export default function Home() {
-  // Render instantly with fallback content, then hydrate from the backend.
-  const [hero, setHero] = useState(heroFallback)
-  const [aboutPreview, setAboutPreview] = useState(aboutPreviewFallback)
+  // null = not yet attempted; false = failed/empty; object = loaded
+  const [hero, setHero] = useState(null)
+  const [aboutPreview, setAboutPreview] = useState(null)
 
   useEffect(() => {
     let active = true
@@ -16,27 +15,30 @@ export default function Home() {
       .then(({ data }) => {
         if (!active || !data?.data) return
         const h = data.data
-        setHero({
-          staticHeading: h.staticHeading || heroFallback.staticHeading,
-          typewriterTexts: h.typewriterTexts?.length ? h.typewriterTexts : heroFallback.typewriterTexts,
-          paragraphText: h.paragraphText || heroFallback.paragraphText,
-          skills: h.skills?.length ? h.skills : heroFallback.skills,
-          heroImage: h.heroImage || heroFallback.heroImage,
-          cvDoc: h.cvDoc || heroFallback.cvDoc,
-        })
-        setAboutPreview({
-          aboutPreviewHeading: h.aboutPreviewHeading || aboutPreviewFallback.aboutPreviewHeading,
-          aboutPreviewText: h.aboutPreviewText || aboutPreviewFallback.aboutPreviewText,
-          aboutPreviewImage: h.aboutPreviewImage || aboutPreviewFallback.aboutPreviewImage,
-        })
+        // Only set if backend actually returned content
+        if (h.staticHeading || h.heroImage) {
+          setHero({
+            staticHeading: h.staticHeading || '',
+            typewriterTexts: h.typewriterTexts?.length ? h.typewriterTexts : [],
+            paragraphText: h.paragraphText || '',
+            skills: h.skills?.length ? h.skills : [],
+            heroImage: h.heroImage || '',
+            cvDoc: h.cvDoc || '#',
+          })
+          setAboutPreview({
+            aboutPreviewHeading: h.aboutPreviewHeading || '',
+            aboutPreviewText: h.aboutPreviewText || '',
+            aboutPreviewImage: h.aboutPreviewImage || '',
+          })
+        }
       })
-      .catch(() => { /* keep fallback content visible */ })
+      .catch(() => { /* backend offline — nothing shown */ })
     return () => { active = false }
   }, [])
 
   return (<>
-    <Hero hero={hero} />
-    <AboutPreview aboutPreview={aboutPreview} />
+    {hero && <Hero hero={hero} />}
+    {aboutPreview && <AboutPreview aboutPreview={aboutPreview} />}
     <RecentWork />
   </>)
 }

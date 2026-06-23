@@ -7,17 +7,19 @@ import { ArrowRight } from 'lucide-react'
 export default function AboutPreview({ aboutPreview }) {
   return (
     <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-      <div className="grid md:grid-cols-2 gap-10 items-stretch">
+      <div className="grid md:grid-cols-2 gap-10 items-center">
 
-        {/* IMAGE CONTAINER */}
+        {/* IMAGE CONTAINER — fixed square, centered */}
         <motion.div
           initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}
-          className="order-2 md:order-1 flex flex-col"
+          className="order-2 md:order-1 flex justify-center"
         >
-          <img
-            src={aboutPreview.aboutPreviewImage} alt="About preview"
-            className="rounded-lg shadow-xl w-full object-cover h-64 md:h-full md:min-h-[320px] flex-1"
-          />
+          <div className="w-64 h-64 xs:w-72 xs:h-72 sm:w-80 sm:h-80 md:w-72 md:h-72 lg:w-96 lg:h-96 rounded-xl overflow-hidden shadow-xl flex-shrink-0">
+            <img
+              src={aboutPreview.aboutPreviewImage} alt="About preview"
+              className="w-full h-full object-cover"
+            />
+          </div>
         </motion.div>
 
         {/* TEXT CONTENT CONTAINER */}
@@ -26,9 +28,9 @@ export default function AboutPreview({ aboutPreview }) {
           className="order-1 md:order-2 flex flex-col justify-center text-left"
         >
           <h2 className="heading text-3xl sm:text-4xl mb-4">{aboutPreview.aboutPreviewHeading}</h2>
-          <p className="mb-6">{aboutPreview.aboutPreviewText}</p>
+          <p className="mb-6 text-justify">{aboutPreview.aboutPreviewText}</p>
 
-          {/* DESKTOP-ONLY WRAPPER (Guarantees the button hides on mobile) */}
+          {/* DESKTOP-ONLY WRAPPER */}
           <div className="hidden md:block">
             <Link to="/about" className="btn-primary inline-flex items-center gap-2 w-fit">
               Read More <ArrowRight size={16} />
@@ -38,7 +40,7 @@ export default function AboutPreview({ aboutPreview }) {
 
       </div>
 
-      {/* MOBILE-ONLY BUTTON (Shows only below the image when screen < 768px) */}
+      {/* MOBILE-ONLY BUTTON */}
       <div className="mt-8 md:hidden flex justify-start">
         <Link to="/about" className="btn-primary inline-flex items-center gap-2 w-fit">
           Read More <ArrowRight size={16} />
