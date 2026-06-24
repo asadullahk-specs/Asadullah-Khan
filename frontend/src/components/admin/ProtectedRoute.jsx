@@ -6,7 +6,7 @@ export default function ProtectedRoute({ children }) {
   const location = useLocation()
 
   // Avoid a flash-redirect to /admin/login while we're still verifying a
-  // token that was found in localStorage on page load.
+  // token that was found in sessionStorage on page load.
   if (checkingSession) {
     return (
       <div className="min-h-screen grid place-items-center bg-lightBg dark:bg-darkBg">

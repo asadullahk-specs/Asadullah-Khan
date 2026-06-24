@@ -1,40 +1,18 @@
-import { createContext, useContext, useEffect, useState } from 'react'
-import api from '../services/api.js'
+import { createContext, useContext, useState } from 'react'
+import api, { setAuthToken, clearAuthToken } from '../services/api.js'
 
 const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('admin_user') || 'null') } catch { return null }
-  })
-  const [checkingSession, setCheckingSession] = useState(true)
-
-  useEffect(() => {
-    if (user) localStorage.setItem('admin_user', JSON.stringify(user))
-    else localStorage.removeItem('admin_user')
-  }, [user])
-
-  // On first load, if a token exists, confirm it's still valid against the
-  // backend (handles expired/invalid tokens left over from a previous visit).
-  useEffect(() => {
-    const token = localStorage.getItem('token')
-    if (!token) { setCheckingSession(false); return }
-
-    api.get('/auth/me')
-      .then(({ data }) => {
-        if (data?.admin) setUser(data.admin)
-      })
-      .catch(() => {
-        localStorage.removeItem('token')
-        setUser(null)
-      })
-      .finally(() => setCheckingSession(false))
-  }, [])
+  // State starts as null on every page load — no storage is read.
+  // A page refresh always resets to "not logged in".
+  const [user, setUser] = useState(null)
 
   const login = async (email, password) => {
     try {
       const { data } = await api.post('/auth/login', { email, password })
-      localStorage.setItem('token', data.token)
+      // Store token only in memory — wiped on refresh.
+      setAuthToken(data.token)
       setUser(data.admin)
       return { ok: true }
     } catch (err) {
@@ -44,12 +22,18 @@ export function AuthProvider({ children }) {
   }
 
   const logout = () => {
-    localStorage.removeItem('token')
+    clearAuthToken()
     setUser(null)
   }
 
+  // Call this after a successful email update so the header reflects the
+  // new address without forcing a logout/login cycle.
+  const updateUser = (updates) => {
+    setUser((prev) => ({ ...prev, ...updates }))
+  }
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, isAuthenticated: !!user, checkingSession }}>
+    <AuthContext.Provider value={{ user, login, logout, updateUser, isAuthenticated: !!user, checkingSession: false }}>
       {children}
     </AuthContext.Provider>
   )

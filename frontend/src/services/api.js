@@ -1,21 +1,25 @@
 import axios from 'axios'
 
-// Base API client, wired to the Express + MySQL backend.
+// Base API client, wired to the Express + MongoDB backend.
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
   withCredentials: true,
 })
 
-// Attach JWT token if present (admin dashboard requests)
+// In-memory token store — lives only for the current page lifecycle.
+// A page refresh wipes this variable, which forces a fresh login every time.
+let _token = null
+export const setAuthToken  = (t) => { _token = t }
+export const clearAuthToken = () => { _token = null }
+
+// Attach the token on every request (if present).
 api.interceptors.request.use((cfg) => {
-  const token = localStorage.getItem('token')
-  if (token) cfg.headers.Authorization = `Bearer ${token}`
+  if (_token) cfg.headers.Authorization = `Bearer ${_token}`
   return cfg
 })
 
-// If the admin's session has expired or the token is invalid, the backend
-// responds 401. Clear local auth state and bounce to the login screen
-// instead of leaving the dashboard in a broken half-authenticated state.
+// If the backend returns 401 while inside the admin panel, clear the in-memory
+// token and redirect to the login page.
 api.interceptors.response.use(
   (res) => res,
   (error) => {
@@ -24,8 +28,7 @@ api.interceptors.response.use(
       window.location.pathname.startsWith('/admin') &&
       window.location.pathname !== '/admin/login'
     ) {
-      localStorage.removeItem('token')
-      localStorage.removeItem('admin_user')
+      clearAuthToken()
       window.location.href = '/admin/login'
     }
     return Promise.reject(error)

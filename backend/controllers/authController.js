@@ -61,4 +61,27 @@ const changePassword = asyncHandler(async (req, res) => {
   res.json({ success: true, message: 'Password updated successfully.' });
 });
 
-module.exports = { login, getMe, changePassword };
+// POST /api/auth/change-email
+const changeEmail = asyncHandler(async (req, res) => {
+  const { currentPassword, newEmail } = req.body;
+  if (!currentPassword || !newEmail) {
+    throw new ApiError(400, 'Current password and new email are required.');
+  }
+
+  const trimmedEmail = String(newEmail).trim().toLowerCase();
+  // Basic email format check
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+    throw new ApiError(400, 'Invalid email address.');
+  }
+
+  const admin = await Admin.findByEmail(req.admin.email);
+  const match = await bcrypt.compare(currentPassword, admin.password);
+  if (!match) {
+    throw new ApiError(401, 'Current password is incorrect.');
+  }
+
+  const updated = await Admin.updateProfile(admin.id, { name: admin.name, email: trimmedEmail });
+  res.json({ success: true, message: 'Login email updated successfully.', admin: updated });
+});
+
+module.exports = { login, getMe, changePassword, changeEmail };
